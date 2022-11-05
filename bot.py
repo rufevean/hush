@@ -7,6 +7,7 @@ from datetime import datetime ,time, timedelta
 bot = commands.Bot(command_prefix="*", intents=discord.Intents.all())
 #giving a time to send the message
 noTime = datetime.now()
+token  = open("token.txt", "r").read()
 # time = noTime.hour
 channel_id = 1038026099797528646
 #for logs
@@ -14,7 +15,7 @@ channel_id = 1038026099797528646
 async def on_ready():
     print("the bot is ready") #for our logs to check if the bot is started
 
-    
+
 @bot.event
 async def on_message(message):
     if message.author.bot: #doesnt reply to bots
@@ -26,4 +27,4 @@ async def on_message(message):
     elif message.content == message2: #checks if the message is message2
         await message.reply("hello bot") #rplies with the hello bot
 if __name__ == "__main__":
-    bot.run('MTAzODAyNTI2ODQyNzc2MzcxMg.GJ4A7b.UCG6iZJ1tN5F--k42FlZOtBFIVbnJb-vrveKUs') #starting the bot
+    bot.run(token) #starting the bot
