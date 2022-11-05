@@ -1,33 +1,33 @@
-# IMPORT DISCORD.PY. ALLOWS ACCESS TO DISCORD'S API.
-import discord
+from discord.ext import commands
+from datetime import datetime, time, timedelta
+import asyncio
 
-# GETS THE CLIENT OBJECT FROM DISCORD.PY. CLIENT IS SYNONYMOUS WITH BOT.
-bot = discord.Client(intents=discord.Intents.default())
+bot = commands.Bot(command_prefix="$")
+WHEN = time(18, 0, 0)  # 6:00 PM
+channel_id = 1 # Put your channel id here
 
-# EVENT LISTENER FOR WHEN THE BOT HAS SWITCHED FROM OFFLINE TO ONLINE.
-@bot.event
-async def on_ready():
-	# CREATES A COUNTER TO KEEP TRACK OF HOW MANY GUILDS / SERVERS THE BOT IS CONNECTED TO.
-	guild_count = 0
+async def called_once_a_day():  # Fired every day
+    await bot.wait_until_ready()  # Make sure your guild cache is ready so the channel can be found via get_channel
+    channel = bot.get_channel(channel_id) # Note: It's more efficient to do bot.get_guild(guild_id).get_channel(channel_id) as there's less looping involved, but just get_channel still works fine
+    await channel.send("your message here")
 
-	# LOOPS THROUGH ALL THE GUILD / SERVERS THAT THE BOT IS ASSOCIATED WITH.
-	for guild in bot.guilds:
-		# PRINT THE SERVER'S ID AND NAME.
-		print(f"- {guild.id} (name: {guild.name})")
+async def background_task():
+    now = datetime.utcnow()
+    if now.time() > WHEN:  # Make sure loop doesn't start after {WHEN} as then it will send immediately the first time as negative seconds will make the sleep yield instantly
+        tomorrow = datetime.combine(now.date() + timedelta(days=1), time(0))
+        seconds = (tomorrow - now).total_seconds()  # Seconds until tomorrow (midnight)
+        await asyncio.sleep(seconds)   # Sleep until tomorrow and then the loop will start
+    while True:
+        now = datetime.utcnow() # You can do now() or a specific timezone if that matters, but I'll leave it with utcnow
+        target_time = datetime.combine(now.date(), WHEN)  # 6:00 PM today (In UTC)
+        seconds_until_target = (target_time - now).total_seconds()
+        await asyncio.sleep(seconds_until_target)  # Sleep until we hit the target time
+        await called_once_a_day()  # Call the helper function that sends the message
+        tomorrow = datetime.combine(now.date() + timedelta(days=1), time(0))
+        seconds = (tomorrow - now).total_seconds()  # Seconds until tomorrow (midnight)
+        await asyncio.sleep(seconds)   # Sleep until tomorrow and then the loop will start a new iteration
 
-		# INCREMENTS THE GUILD COUNTER.
-		guild_count = guild_count + 1
 
-	# PRINTS HOW MANY GUILDS / SERVERS THE BOT IS IN.
-	print("SampleDiscordBot is in " + str(guild_count) + " guilds.")
-
-# EVENT LISTENER FOR WHEN A NEW MESSAGE IS SENT TO A CHANNEL.
-@bot.event
-async def on_message(message):
-	# CHECKS IF THE MESSAGE THAT WAS SENT IS EQUAL TO "HELLO".
-	if message.content.startswith('$hello'):
-		# SENDS BACK A MESSAGE TO THE CHANNEL.
-		await message.channel.send("hey dirtbag")
-
-# EXECUTES THE BOT WITH THE SPECIFIED TOKEN. TOKEN HAS BEEN REMOVED AND USED JUST AS AN EXAMPLE.
-bot.run('MTAzODAyNTI2ODQyNzc2MzcxMg.GyQt9b.XI5gwYf4492OoVIuJGtpaL8WSnHntkRN5R6_oo')
+if __name__ == "__main__":
+    bot.loop.create_task(background_task())
+    bot.run('token')
